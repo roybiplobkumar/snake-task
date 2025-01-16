@@ -1,9 +1,6 @@
-import SnakeGame from "./components/SnakeGame"
 
-function App() {
-  return (
-  <SnakeGame></SnakeGame>
-  )
+import SnakeGame from "./components/SnakeGame";
+
+export default function App() {
+  return <SnakeGame />;
 }
-
-export default App

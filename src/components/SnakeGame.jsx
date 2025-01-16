@@ -1,27 +1,18 @@
-import { useEffect } from "react";
-import { useRef } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { setUserLocation } from './../utils/setUserLocation';
+import { generateFood } from "../utils/generateFood";
 
-const gridSize = 15 ;
-const gameGrid=Array.from({length:gridSize}, ()=> new Array(gridSize).fill("")) ;
-console.log(gameGrid)
-const initalSnak = [[5, 5]];
-const generateFood = () => {
-  const x = Math.floor(Math.random() * gridSize);
-  const y = Math.floor(Math.random() * gridSize);
-  return [x, y];
-};
+ export const gridSize = 15;
+const initialSnake = [[2, 2]];
+
 
 
 const SnakeGame = () => {
-  const [snakeBody, setSnakeBody] = useState(initalSnak);
+  const [snakeBody, setSnakeBody] = useState(initialSnake);
+  const [food, setFood] = useState(generateFood(initialSnake));
   const directionRef = useRef([1, 0]);
-  const foodRef = useRef(generateFood());
-  const isSnakeBodyDiv = (xy, yc) => {
-    return snakeBody.some(([x, y]) => {
-      return x === xy && y === yc;
-    });
-  };
+
+  const isSnakeBodyDiv = (xc, yc) =>snakeBody.some(([x, y]) => x === xc && y === yc);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -30,44 +21,40 @@ const SnakeGame = () => {
           prevSnakeBody[0][0] + directionRef.current[0],
           prevSnakeBody[0][1] + directionRef.current[1],
         ];
+        console.log("new head,",newHead)
 
         if (
           newHead[0] < 0 ||
           newHead[0] >= gridSize ||
           newHead[1] < 0 ||
           newHead[1] >= gridSize ||
-          prevSnakeBody.some(([x, y]) => {
-            return newHead[0] === x && newHead[1] === y;
-          })
+          prevSnakeBody.some(([x, y]) => newHead[0] === x && newHead[1] === y)
         ) {
           directionRef.current = [1, 0];
-          return initalSnak;
-        }
-        const copySnakeBody = prevSnakeBody.map((arr) => [...arr]);
-        if (
-          newHead[0] === foodRef.current[0] &&
-          newHead[1] === foodRef.current[1]
-        ) {
-          foodRef.current = generateFood();
-        } else {
-          copySnakeBody.pop();
+          setFood(generateFood(initialSnake));
+          return initialSnake;
         }
 
-        copySnakeBody.unshift(newHead);
-        return copySnakeBody;
+        let newSnakeBody = [newHead, ...prevSnakeBody];
+        if (newHead[0] === food[0] && newHead[1] === food[1]) {
+          setFood(generateFood(newSnakeBody));
+        } else {
+          newSnakeBody.pop();
+        }
+
+        return newSnakeBody;
       });
-    }, 100);
+    }, 200);
 
     const handleDirection = (e) => {
       const key = e.key;
-      console.log(key);
-      if (key === "ArrowUp" && directionRef.current[1] != 1) {
+      if (key === "ArrowUp" && directionRef.current[1] !== 1) {
         directionRef.current = [0, -1];
-      } else if (key === "ArrowLeft" && directionRef.current[0] != 1) {
+      } else if (key === "ArrowLeft" && directionRef.current[0] !== 1) {
         directionRef.current = [-1, 0];
-      } else if (key === "ArrowRight" && directionRef.current[0] != -1) {
+      } else if (key === "ArrowRight" && directionRef.current[0] !== -1) {
         directionRef.current = [1, 0];
-      } else if (key === "ArrowDown" && directionRef.current[1] != -1) {
+      } else if (key === "ArrowDown" && directionRef.current[1] !== -1) {
         directionRef.current = [0, 1];
       }
     };
@@ -78,26 +65,36 @@ const SnakeGame = () => {
       clearInterval(intervalId);
       window.removeEventListener("keydown", handleDirection);
     };
+  }, [food]);
+
+  useEffect(() => {
+    setUserLocation();
   }, []);
+
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="w-[15rem] h-[15rem] border-2 grid grid-cols-[repeat(15,_1fr)] border-black bg-white rounded-md shadow-md">
-
-        {gameGrid.map((row,yc)=>{
-          return row.map((cell, xc)=>{
-            return (
-              <div key={cell}
-                className={`cell ${isSnakeBodyDiv(xc, yc) ? "bg-green-500" : ""}
-                ${
-                  foodRef.current[0] === xc && foodRef.current[1] === yc
-                    ? "bg-red-500 rounded-full"
-                    : ""
-                }`}
-              ></div>
-            );
-          })
-        })}
-       
+      <div
+        className="w-[15rem] h-[15rem] border grid grid-cols-[repeat(15,_1fr)] border-black bg-white rounded-md shadow-md"
+        style={{
+          backgroundImage: `url('https://i.ibb.co.com/VxSbDsJ/image.png')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {Array.from({ length: gridSize }, (_, yc) =>
+          Array.from({ length: gridSize }, (_, xc) => (
+            <div
+              key={`${xc}-${yc}`}
+              className={` ${
+                isSnakeBodyDiv(xc, yc) ? "bg-[#FFD700]" : ""
+              } ${
+                food[0] === xc && food[1] === yc
+                  ? "bg-[#FF4500] rounded-full"
+                  : ""
+              }`}
+            ></div>
+          ))
+        )}
       </div>
     </div>
   );
